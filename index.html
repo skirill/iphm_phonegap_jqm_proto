@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IPHM Mobile | Archive</title>
+    <link rel="stylesheet" href="css/jquery.mobile-1.4.5.css">
+    <link rel="stylesheet" href="css/jquery.mobile.datepicker.css">
+    <link rel="stylesheet" href="css/main.css">
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/cfg.js"></script>
+    <script type="text/javascript" src="js/frameworks/jquery.js"></script>
+    <script type="text/javascript" src="js/frameworks/jquery.ui.datepicker.js"></script>
+    <script type="text/javascript">
+        $(document).on("mobileinit", function () {
+            // TODO: conditionally do this for iOS only (check, maybe done automatically)
+            // $.mobile.toolbar.prototype.options.addBackBtn = true;
+        });
+    </script>
+    <script type="text/javascript" src="js/frameworks/jquery.mobile-1.4.5.js"></script>
+    <script type="text/javascript" src="js/frameworks/jquery.mobile.datepicker.js"></script>
+    <script type="text/javascript" src="js/frameworks/iscroll.js"></script>
+    <script type="text/javascript" src="js/fakealerts.js"></script> <!-- TODO: remove! for prototyping only -->
+    <script type="text/javascript" src="js/db.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+        <script type="text/javascript">
+            var id = 1, dialog;
+
+            callback = function () {
+                cordova.plugins.notification.local.getIds(function (ids) {
+                    showToast('IDs: ' + ids.join(' ,'));
+                });
+            };
+
+            showToast = function (text) {
+                setTimeout(function () {
+                    if (device.platform != 'windows') {
+                        window.plugins.toast.showShortBottom(text);
+                    } else {
+                        showDialog(text);
+                    }
+                }, 100);
+            };
+
+            showDialog = function (text) {
+                if (dialog) {
+                    dialog.content = text;
+                    return;
+                }
+
+                dialog = new Windows.UI.Popups.MessageDialog(text);
+
+                dialog.showAsync().done(function () {
+                    dialog = null;
+                });
+            };
+
+        </script>
+
+        <!-- permission -->
+        <script type="text/javascript">
+            hasPermission = function () {
+                cordova.plugins.notification.local.hasPermission(function (granted) {
+                    showToast(granted ? 'Yes' : 'No');
+                });
+            };
+
+            registerPermission = function () {
+                cordova.plugins.notification.local.registerPermission(function (granted) {
+                    showToast(granted ? 'Yes' : 'No');
+                });
+            };
+        </script>
+
+        <!-- schedule -->
+        <script type="text/javascript">
+            schedule = function () {
+                cordova.plugins.notification.local.schedule({
+                    id: 1,
+                    text: 'Test Message 1',
+                    icon: 'http://www.optimizeordie.de/wp-content/plugins/social-media-widget/images/default/64/googleplus.png',
+                    sound: null,
+                    data: { test: id }
+                });
+            };
+
+            scheduleMultiple = function () {
+                cordova.plugins.notification.local.schedule([{
+                    id: 1,
+                    text: 'Multi Message 1'
+                }, {
+                    id: 2,
+                    text: 'Multi Message 2'
+                }, {
+                    id: 3,
+                    text: 'Multi Message 3'
+                }]);
+            };
+
+            scheduleDelayed = function () {
+                var now = new Date().getTime(),
+                    _5_sec_from_now = new Date(now + 5 * 1000);
+
+                var sound = device.platform == 'Android' ? 'file://sound.mp3' : 'file://beep.caf';
+
+                cordova.plugins.notification.local.schedule({
+                    id: 1,
+                    title: 'Scheduled with delay',
+                    text: 'Test Message 1',
+                    at: _5_sec_from_now,
+                    sound: sound,
+                    badge: 12
+                });
+            };
+
+            scheduleMinutely = function () {
+                var sound = device.platform == 'Android' ? 'file://sound.mp3' : 'file://beep.caf';
+
+                cordova.plugins.notification.local.schedule({
+                    id: 1,
+                    text: 'Scheduled every minute',
+                    every: 'minute',
+                    sound: sound
+                });
+            };
+        </script>
+
+        <!-- update -->
+        <script type="text/javascript">
+            update = function () {
+                cordova.plugins.notification.local.update({
+                    id: 1,
+                    text: 'Updated Message 1',
+                    json: { updated: true }
+                });
+            };
+
+            updateInterval = function () {
+                cordova.plugins.notification.local.update({
+                    id: 1,
+                    text: 'Updated Message 1',
+                    every: 'minute'
+                });
+            };
+        </script>
+
+        <!-- clear -->
+        <script type="text/javascript">
+            clearSingle = function () {
+                cordova.plugins.notification.local.clear(1, callback);
+            };
+
+            clearMultiple = function () {
+                cordova.plugins.notification.local.clear([2, 3], callback);
+            };
+
+            clearAll = function () {
+                cordova.plugins.notification.local.clearAll(callback);
+            };
+        </script>
+
+        <!-- cancel -->
+        <script type="text/javascript">
+            cancel = function () {
+                cordova.plugins.notification.local.cancel(1, callback);
+            };
+
+            cancelMultiple = function () {
+                cordova.plugins.notification.local.cancel([2, 3], callback);
+            };
+
+            cancelAll = function () {
+                cordova.plugins.notification.local.cancelAll(callback);
+            };
+        </script>
+
+        <!-- presence -->
+        <script type="text/javascript">
+            isPresent = function () {
+                cordova.plugins.notification.local.isPresent(id, function (present) {
+                    showToast(present ? 'Yes' : 'No');
+                });
+            };
+
+            isScheduled = function () {
+                cordova.plugins.notification.local.isScheduled(id, function (scheduled) {
+                    showToast(scheduled ? 'Yes' : 'No');
+                });
+            };
+
+            isTriggered = function () {
+                cordova.plugins.notification.local.isTriggered(id, function (triggered) {
+                    showToast(triggered ? 'Yes' : 'No');
+                });
+            };
+        </script>
+
+        <!-- IDs -->
+        <script type="text/javascript">
+            var callbackIds = function (ids) {
+                console.log(ids);
+                showToast(ids.length === 0 ? '- none -' : ids.join(' ,'));
+            };
+
+            getIds = function () {
+                cordova.plugins.notification.local.getIds(callbackIds);
+            };
+
+            getScheduledIds = function () {
+                cordova.plugins.notification.local.getScheduledIds(callbackIds);
+            };
+
+            getTriggeredIds = function () {
+                cordova.plugins.notification.local.getTriggeredIds(callbackIds);
+            };
+        </script>
+
+        <!-- notifications -->
+        <script type="text/javascript">
+            var callbackOpts = function (notifications) {
+                console.log(notifications);
+                showToast(notifications.length === 0 ? '- none -' : notifications.join(' ,'));
+            };
+
+            var callbackSingleOpts = function (notification) {
+                console.log(notification);
+                showToast(notification.toString());
+            };
+
+            get = function () {
+                cordova.plugins.notification.local.get(1, callbackSingleOpts);
+            };
+
+            getMultiple = function () {
+                cordova.plugins.notification.local.get([1, 2], callbackOpts);
+            };
+
+            getAll = function () {
+                cordova.plugins.notification.local.getAll(callbackOpts);
+            };
+
+            getScheduled = function () {
+                cordova.plugins.notification.local.getScheduled(callbackOpts);
+            };
+
+            getTriggered = function () {
+                cordova.plugins.notification.local.getTriggered(callbackOpts);
+            };
+        </script>
+
+        <!-- defaults -->
+        <script type="text/javascript">
+            setDefaultTitle = function () {
+                cordova.plugins.notification.local.setDefaults({
+                    title: 'New Default Title'
+                });
+            };
+        </script>
+
+        <!-- callbacks -->
+        <script type="text/javascript">
+            document.addEventListener('deviceready', function () {
+
+                cordova.plugins.notification.local.on('schedule', function (notification) {
+                    console.log('onschedule', arguments);
+                    // showToast('scheduled: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('update', function (notification) {
+                    console.log('onupdate', arguments);
+                    // showToast('updated: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('trigger', function (notification) {
+                    console.log('ontrigger', arguments);
+                    showToast('triggered: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('click', function (notification) {
+                    console.log('onclick', arguments);
+                    showToast('clicked: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('cancel', function (notification) {
+                    console.log('oncancel', arguments);
+                    // showToast('canceled: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('clear', function (notification) {
+                    console.log('onclear', arguments);
+                    showToast('cleared: ' + notification.id);
+                });
+
+                cordova.plugins.notification.local.on('cancelall', function () {
+                    console.log('oncancelall', arguments);
+                    // showToast('canceled all');
+                });
+
+                cordova.plugins.notification.local.on('clearall', function () {
+                    console.log('onclearall', arguments);
+                    // showToast('cleared all');
+                });
+            }, false);
+        </script>
+</head>
+
+<body>
+
+<!-- PAGE: Alerts -->
+<div id="alerts" data-role="page" data-theme="b">
+
+    <!-- Header -->
+    <div id="alerts-header" data-role="header">
+        <h1>Alerts</h1>
+        <div data-type="horizontal" class="ui-mini ui-btn-left">
+            <img src="img/iphost.png" alt="IPHM" class="ui-li-icon ui-corner-none">
+        </div> <!-- /leftmost image -->
+        <div data-role="controlgroup" data-type="horizontal" class="ui-mini ui-btn-right">
+            <a href="#" class="ui-btn ui-corner-all ui-shadow ui-icon-gear ui-btn-icon-notext">Settings</a>
+        </div> <!-- /rightmost buttons -->
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#" onClick="newClick(); return false;">New</a></li>
+                <li><a href="#" onClick="archiveClick(); return false;">Archive</a></li>
+            </ul>
+        </div> <!-- /navbar -->
+    </div> <!-- /header -->
+
+    <!-- Content -->
+    <div id="content" data-role="content">
+
+        <!-- TAB: New -->
+        <div id="new">
+<!--            <p><center>TODO</center></p>-->
+
+            <!-- permission -->
+            <h2 class="section" style="padding-top:180px;">Permission (iOS8)</h2>
+            <div class="container">
+                <div onclick="hasPermission()">Granted?<br /><span>hasPermission()</span></div>
+                <div onclick="registerPermission()">Register<br /><span>registerPermission()</span></div>
+            </div>
+
+            <!-- schedule -->
+            <h2 class="section">Schedule</h2>
+            <div class="container">
+                <div onclick="schedule()">Single<br /><span>schedule(1)</span></div>
+                <div onclick="scheduleMultiple()">Multiple<br /><span>schedule(1, 2, 3)</span></div>
+            </div>
+            <div class="container">
+                <div onclick="scheduleDelayed()">In 5 sec<br /><span>schedule(1, firstAt:later)</span></div>
+                <div onclick="scheduleMinutely()">Every min<br /><span>schedule(1, every:minute)</span></div>
+            </div>
+
+            <!-- update -->
+            <h2 class="section">Update</h2>
+            <div class="container">
+                <div onclick="update()">Title<br /><span>update(1)</span></div>
+                <div onclick="updateInterval()">Interval<br /><span>update(1, every:minute)</span></div>
+            </div>
+
+            <!-- clear -->
+            <h2 class="section">Clear</h2>
+            <div class="container">
+                <div onclick="clearSingle()">Single<br /><span>clear(1)</span></div>
+                <div onclick="clearMultiple()">Multiple<br /><span>clear(2, 3)</span></div>
+            </div>
+            <div class="container">
+                <div onclick="clearAll()">All<br /><span>clearAll()</span></div>
+            </div>
+
+            <!-- cancel -->
+            <h2 class="section">Cancel</h2>
+            <div class="container">
+                <div onclick="cancel()">Single<br /><span>cancel(1)</span></div>
+                <div onclick="cancelMultiple()">Multiple<br /><span>cancel(2, 3)</span></div>
+            </div>
+            <div class="container">
+                <div onclick="cancelAll()">All<br /><span>cancelAll()</span></div>
+            </div>
+
+            <!-- presence -->
+            <h2 class="section">Presence</h2>
+            <div class="container">
+                <div onclick="isScheduled()">Scheduled?<br /><span>isScheduled(1)</span></div>
+                <div onclick="isTriggered()">Triggered?<br /><span>isTrigered(1)</span></div>
+            </div>
+            <div class="container">
+                <div onclick="isPresent()">Present?<br /><span>present(1)</span></div>
+            </div>
+
+            <!-- id's -->
+            <h2 class="section">ID's</h2>
+            <div class="container">
+                <div onclick="getScheduledIds()">Scheduled<br /><span>getScheduledIds()</span></div>
+                <div onclick="getTriggeredIds()">Triggered<br /><span>getTriggeredIds()</span></div>
+            </div>
+            <div class="container">
+                <div onclick="getIds()">All<br /><span>getIds()</span></div>
+            </div>
+
+            <!-- notifications -->
+            <h2 class="section">Notifications</h2>
+            <div class="container">
+                <div onclick="getScheduled()">Scheduled<br /><span>getScheduled()</span></div>
+                <div onclick="getTriggered()">Triggered<br /><span>getTrigered()</span></div>
+            </div>
+            <div class="container">
+                <div onclick="get()">Single<br /><span>get(1)</span></div>
+                <div onclick="getMultiple()">Multiple<br /><span>get(1, 2)</span></div>
+            </div>
+            <div class="container">
+                <div onclick="getAll()">All<br /><span>getAll()</span></div>
+            </div>
+
+            <!-- defaults -->
+            <h2 class="section">Defaults</h2>
+            <div class="container">
+                <div onclick="setDefaultTitle()">Change title<br /><span>setDefaults(title:"...")</span></div>
+            </div>
+
+            <!-- copyright -->
+            <div class="copyright">
+                © 2013-2015 appPlant
+            </div>
+        </div>
+
+        </div> <!-- /new -->
+
+        <!-- TAB: Archive -->
+        <div id="archive">
+            <form class="ui-filterable">
+                <fieldset class="ui-grid-a">
+                    <div class="ui-block-a" style="width:65%"><input id="alertListFilterInput" data-type="search" placeholder="Search for..."></div>
+                    <div class="ui-block-b" style="width:35%"><input id="archiveDatePicker" type="text" data-role="date" readonly></div>
+                </fieldset>
+            </form>
+            <div id="archive-scroll" data-iscroll>
+                <ul id="arch-list" data-role="listview" class="arch-list-class" data-filter="true" data-input="#alertListFilterInput">
+                     <!-- populated at run time -->
+                </ul>
+            </div> <!-- /archive-scroll -->
+            <div data-role="popup" id="archivePopupMenu">
+                <a href="#" data-rel="back" class="ui-btn ui-corner-all ui-shadow ui-btn-b ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+                <ul data-role="listview" data-inset="true" style="min-width:210px;">
+                    <li data-role="list-divider">Mark As Read</li>
+                    <li><a href="#" data-rel="back">Alerts Above</a></li>
+                    <li><a href="#" data-rel="back">This Alert</a></li>
+                    <li><a href="#"data-rel="back">Alerts Below</a></li>
+                </ul>
+            </div> <!-- /popup -->
+            <!-- invisible link to open the popup menu -->
+            <a id="archivePopupMenuLink" href="#archivePopupMenu" data-rel="popup" data-transition="flip" data-position-to="window" style='display:none;'></a>
+        </div> <!-- /archive -->
+
+    </div> <!-- /content -->
+
+</div> <!-- /page -->
+
+<!-- PAGE: Details -->
+<div id="details" data-role="page" data-theme="b">
+
+    <!-- Header -->
+    <div id="details-header" data-role="header">
+        <h1>Alert Details</h1>
+        <div id="details-icon" data-type="horizontal" class="ui-mini ui-btn-left">
+            <!-- here goes live data instead of this dummy html -->
+            <img src="img/down_large.png" alt="down">
+        </div> <!-- /leftmost image -->
+    </div> <!-- /header -->
+
+    <!-- Content -->
+    <div id="details-content" role="main" class="ui-content">
+        <ul id="details-list" data-role="listview">
+            <li>
+                <p class='ui-li-aside-noicon'><strong id='details-time'>
+                    <!-- here goes live data instead of this dummy html -->
+                    Dec 25, 2015 09:15:34 PM
+                </strong></p>
+                <table>
+                <colgroup>
+                    <col span="1" style="width: 10%;"/>
+                    <col span="1" style="width: 10%;"/>
+                    <col span="1" style="width: 80%;"/>
+                </colgroup>
+                <tr>
+                    <td valign='top' style="padding-top: .9em; padding-right: .5em;" id='details-mt-icon'>
+                        <!-- here goes live data instead of this dummy html -->
+                        <img src="img/mt_0.png" alt="PING">
+                    </td>
+                    <td colspan='2'><p><h1 id='details-name' style="font-size: 1.1em; white-space: pre-wrap;">
+                        <!-- here goes live data instead of this dummy html -->
+                        PING on uran.lan
+                    </h1></p></td>
+                </tr>
+                <tr>
+                    <td/><td><p><strong>Old state:</strong></p></td>
+                    <td><p id='details-old-state'>
+                        <!-- here goes live data instead of this dummy html -->
+                        <img src="img/ok.png" alt="ok"> [ok]
+                    </p></td>
+                </tr>
+                <tr>
+                    <td/><td><p><strong>New state:</strong></p></td>
+                    <td><p id='details-new-state'>
+                        <!-- here goes live data instead of this dummy html -->
+                        <img src="img/down.png" alt="down"> [down]
+                    </p></td>
+                </tr>
+                <tr>
+                    <td/><td valign="top" style="padding-bottom: 2em;"><p><strong>Message:</strong></p></td>
+                    <td valign="top"><p id='details-message' style="white-space: pre-wrap;">
+                        <!-- here goes live data instead of this dummy html -->
+                        Poll failed: timeout of 10 seconds exceeded, spike filter applied
+                    </p></td>
+                </tr>
+                </table>
+            </li>
+            <li data-role="list-divider" id='details-history'>History (max # closest alerts)</li>
+            <!-- here goes live data instead of this dummy html -->
+            <li class="details-history-item"><a href="#">
+                <p class='ui-li-aside'><strong>Dec 25, 2015 09:15:34 PM</strong></p>
+                <p><img src="img/down.png" alt="down"> [ok] &#8680; [down]</p>
+            </a></li>
+            <!-- end of live data for history -->
+            <li data-role="list-divider" id='details-actions'>Actions</li>
+            <li><a href="#">Show report</a></li>
+        </ul>
+    </div> <!-- /content -->
+
+</div> <!-- /page -->
+
+</body>
+
+</html>
