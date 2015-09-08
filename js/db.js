@@ -3,42 +3,44 @@ var cache = {};
 
 var selectedAlertId;
 
-function dbCreate(tx)
+function dbCreate()
 {
     if (!db)
     {
         return;
     }
 
-    // TODO: DB should contain two time values: time when a problem took place (pTime/pDate)
-    // and time when alert message was received (mTime/mDate)
-    // in fake data this is the same but in real data we should keep the distinction
-    // allerts are sorted by arrival time but in alert details problem time should be present
-    // TODO: convert both date fields to integer time - # seconds since Jan 1, 1970
-    tx.executeSql(
-        "CREATE TABLE Alerts ( " +
-            "id INTEGER PRIMARY KEY UNIQUE, " + 
-            "monitorId INTEGER, " + 
-            "name TEXT, " + 
-            "state TEXT, " + 
-            "duration TEXT, " +
-            "prevstate TEXT, " +
-            "pDate TEXT, " + 
-            "pTime TEXT, " + 
-            "mDate TEXT, " + 
-            "mTime TEXT, " + 
-            "message TEXT" + 
-        ")", [], function(tx)
+    db.transaction(function(tx)
+    {
+        // TODO: DB should contain two time values: time when a problem took place (pTime/pDate)
+        // and time when alert message was received (mTime/mDate)
+        // in fake data this is the same but in real data we should keep the distinction
+        // allerts are sorted by arrival time but in alert details problem time should be present
+        // TODO: convert both date fields to integer time - # seconds since Jan 1, 1970
+        tx.executeSql(
+            "CREATE TABLE Alerts ( " +
+                "id INTEGER PRIMARY KEY UNIQUE, " + 
+                "monitorId INTEGER, " + 
+                "name TEXT, " + 
+                "state TEXT, " + 
+                "duration TEXT, " +
+                "prevstate TEXT, " +
+                "pDate TEXT, " + 
+                "pTime TEXT, " + 
+                "mDate TEXT, " + 
+                "mTime TEXT, " + 
+                "message TEXT" + 
+            ")", [], function(tx)
         {
             console.log("Alerts table created");
-
+    
             if (testAddFakeAlerts)
             {
                 var uniqueNames = {}; // string name --> int id map
                 var uniqueNameCount = 0;
         
                 console.log("Will add fake alerts to Alerts table");
-
+    
                 for (index = 0; index < fakeAlerts.length; index++)
                 {
                     if (!uniqueNames.hasOwnProperty(fakeAlerts[index].name))
@@ -67,8 +69,10 @@ function dbCreate(tx)
                         null, null
                     );
                 }
+                console.log("Queued adding " + fakeAlerts.length + " fake alerts to Alerts table");
             }
         }, null);
+    });
 }
 
 function dbOpenOrCreate() 
@@ -97,7 +101,7 @@ function dbOpenOrCreate()
             tx.executeSql("DROP TABLE IF EXISTS Alerts", [], function (tx, result)
             {
                 console.log("Alerts table dropped, will re-create");
-                dbCreate(tx);
+                dbCreate();
             },
             function (tx, error)
             {
@@ -115,7 +119,7 @@ function dbOpenOrCreate()
             function (tx, error)
             {
                 console.log("Alerts table does not exist, will create");
-                dbCreate(tx);
+                dbCreate();
             });
         }
     });
