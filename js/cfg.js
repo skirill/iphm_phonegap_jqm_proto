@@ -11,7 +11,7 @@ var uiMaxHistorySize = 3;
 
 // DB Configuration
 // Clear DB when starting. Should probably be done one and then reverted
-var dbDeleteOnStart = true;
+var dbDeleteOnStart = false;
 // Force use of websql even on mobile devices (normally only used on desktop os)
 // mobile devices use phonegap SQL plugin
 var dbForceUseWebSql = false;
