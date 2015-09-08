@@ -44,6 +44,7 @@
     <!-- Essential for IPHM -->
     <gap:plugin name="io.litehelpers.cordova.sqlite" version="0.7.10" />
     <gap:plugin name="de.appplant.cordova.plugin.local-notification" version="0.8.1"/>
+    <gap:plugin name="com.phonegap.plugins.pushplugin" version="2.5.0" />
     <icon src="icon.png" />
     <icon gap:platform="android" gap:qualifier="ldpi" src="www/res/icon/android/icon-36-ldpi.png" />
     <icon gap:platform="android" gap:qualifier="mdpi" src="www/res/icon/android/icon-48-mdpi.png" />

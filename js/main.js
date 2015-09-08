@@ -13,14 +13,19 @@ var archiveScrollY;
 var mouseX;
 var mouseY;
 
-// DB may only be opened when device is ready
 if (isDevice)
 {
-    document.addEventListener("deviceready", dbOpenOrCreate, false);
+    document.addEventListener("deviceready", function()
+    {
+        // DB may only be opened when device is ready
+        dbOpenOrCreate();
+        pushInit();
+    });
 }
 else
 {
     dbOpenOrCreate();
+    // push N/A
 }
 
 $(document).ready(function() 
@@ -158,6 +163,7 @@ function updateDetails(page, alert)
         $("#details-time",      page).text(alert.mDate + " " + alert.mTime);
         $("#details-mt-icon",   page).html("<img src='img/mt_0.png' alt='PING'/>");
         $("#details-name",      page).text(alert.name);
+        // TODO: show event time that may differ from alert time for delayed alerts
         $("#details-old-state", page).html(
             "<img src='img/" + alert.prevstate + ".png' alt='" + alert.prevstate + "'> [" + alert.prevstate + "]");
         $("#details-new-state", page).html(
