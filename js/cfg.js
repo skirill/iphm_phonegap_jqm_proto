@@ -18,4 +18,4 @@ var dbForceUseWebSql = false;
 
 // Testing
 // Add data from fakelaerts.js to DB when creating it
-var testAddFakeAlerts = true;
+var testAddFakeAlerts = false;

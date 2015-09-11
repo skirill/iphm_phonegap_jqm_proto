@@ -8264,13 +8264,30 @@ var fakeAlerts = [
 ];
 
 function CompareDateAndTime(a, b) {
-  var ad = new Date(a.date + " " + a.time);
-  var bd = new Date(b.date + " " + b.time);
-  return ad < bd ? -1 : ad > bd ? 1 : 0;
+    var ad = new Date(a.date + " " + a.time);
+    var bd = new Date(b.date + " " + b.time);
+
+    return ad < bd ? -1 : ad > bd ? 1 : 0;
 }
 
 fakeAlerts.sort(CompareDateAndTime);
+
+var uniqueNames = {}; // string name --> int id map
+var uniqueNameCount = 0;
+        
 for (index = 0; index < fakeAlerts.length; index++)
 {
-    fakeAlerts[index].id = index;
+    // My fake data has only one date/time pair and no monitor id, so
+    // here we assign same date to problem and message time and derive
+    // unique monitor id for each name using a hash array
+    if (!uniqueNames.hasOwnProperty(fakeAlerts[index].name))
+    {
+        uniqueNames[fakeAlerts[index].name] = uniqueNameCount++;
+    }
+    fakeAlerts[index].monitorId = uniqueNames[fakeAlerts[index].name];
+
+    fakeAlerts[index].pDate = fakeAlerts[index].date;
+    fakeAlerts[index].pTime = fakeAlerts[index].time;
+    fakeAlerts[index].mDate = fakeAlerts[index].date;
+    fakeAlerts[index].mTime = fakeAlerts[index].time;
 }

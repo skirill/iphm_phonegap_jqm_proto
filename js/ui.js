@@ -2,7 +2,9 @@
 // - create 'app' object with methods similar to helloworld structure; move inline
 //   code like below to app.initialize()
 // - when changing date and scrollbar is not at top, jump to top of a new date
-//
+// - I did not change the default splash screens; nethertheless, I don't asee them
+//   upon startup. Need to decide what to do with them.
+// - change the default 'helloworld' app name to smth like iphostmobile.prowidelabs.com
 
 var prevScrollerHeight;
 var prevArchiveDate;
@@ -13,22 +15,7 @@ var archiveScrollY;
 var mouseX;
 var mouseY;
 
-if (isDevice)
-{
-    document.addEventListener("deviceready", function()
-    {
-        // DB may only be opened when device is ready
-        dbOpenOrCreate();
-        pushInit();
-    });
-}
-else
-{
-    dbOpenOrCreate();
-    // push N/A
-}
-
-$(document).ready(function() 
+function uiInit()
 {
     // TODO: could we avoid polling? Below is a correct but maybe not optimal way to monitor
     // scroll area height that may be changed due to several events:
@@ -81,7 +68,27 @@ $(document).ready(function()
     $('[data-role="navbar"] a:last').click();
 
     $("#archiveDatePicker").val($.datepicker.formatDate('mm/dd/yy', new Date()));
-});
+}
+
+if (isDevice)
+{
+    document.addEventListener("deviceready", function()
+    {
+        // DB may only be opened when device is ready
+        dbOpenOrCreate();
+        pushInit(onNewPushAlert);
+        uiInit();
+    });
+}
+else
+{
+    $(document).ready(function()
+    {
+        dbOpenOrCreate();
+        // push N/A
+        uiInit();
+    });
+}
 
 $(document).on('pagecontainershow', function() {
     
@@ -163,7 +170,7 @@ function updateDetails(page, alert)
         $("#details-time",      page).text(alert.mDate + " " + alert.mTime);
         $("#details-mt-icon",   page).html("<img src='img/mt_0.png' alt='PING'/>");
         $("#details-name",      page).text(alert.name);
-        // TODO: show event time that may differ from alert time for delayed alerts
+        $("#details-when",      page).text("State changed on " + alert.pDate + " " + alert.pTime);
         $("#details-old-state", page).html(
             "<img src='img/" + alert.prevstate + ".png' alt='" + alert.prevstate + "'> [" + alert.prevstate + "]");
         $("#details-new-state", page).html(
@@ -247,43 +254,36 @@ function getStateChangeString(alert)
        "[" + alert.state + "] for " + alert.duration;
 }
 
-function showAlerts(alerts)
+function getAlertLi(alert)
 {
-    var newHTML = "";
+    return "<li class='arch-item'>" +
+           "    <a href='#details' id='arch-item-" + alert.id + "' data-transition='slide' class='arch-item-link'>" +
+           "        <img src='img/" + alert.state + ".png' width='16' height='16' alt='" + alert.state + "' class='ui-li-icon ui-corner-none'>" +
+           "        <h1>" + alert.name + "</h1>" +
+           "        <p><strong>" + getStateChangeString(alert) + "</strong></p>" +
+           "        <p>" + alert.message + "</p>" +
+           "        <p class='ui-li-aside'><strong>" + alert.mTime + "</strong></p>" +
+           "    </a>" +
+           "</li>";
+}
 
-    for (index = 0; index < alerts.length; index++)
-    {
-         newHTML += 
-"            <li class='arch-item'>" +
-"                <a href='#details' id='arch-item-" + alerts[index].id + "' data-transition='slide' class='arch-item-link'>" +
-"                    <img src='img/" + alerts[index].state + ".png' width='16' height='16' alt='" + alerts[index].state + "' class='ui-li-icon ui-corner-none'>" +
-"                    <h1>" + alerts[index].name + "</h1>" +
-"                    <p><strong>" + getStateChangeString(alerts[index]) + "</strong></p>" +
-"                    <p>" + alerts[index].message + "</p>" +
-"                    <p class='ui-li-aside'><strong>" + alerts[index].mTime + "</strong></p>" +
-"                </a>" +
-"            </li>";
-    }
-
-    document.querySelector("#arch-list").innerHTML = newHTML;
-
-    // Refresh jquery list view after changing its contents, see the bottom of
-    // http://demos.jquerymobile.com/1.2.0/docs/lists/docs-lists.html
-    $("#arch-list").listview('refresh');
-
-    // Programmatically link custim iscroll 'tap' event to jquery mobile link click behavior
+function setTapAndLongTapForAlerts(nodeClassOrId)
+{
+    // Programmatically link custom iscroll 'tap' event to jquery mobile link click behavior
     // (in this particular case link is opened with transition effect, see index.html)
+    //
+    // This construct is a closure. It allows to declare 'private' variables such as tapTime
+    // that can only be accessed by 'methods' inside of it.
     (function()
     {
         var tapTime = 0;
         var xPos = 0;
         var yPos = 0;
 
-        $('.arch-item-link').bind('vmousedown vmouseup', function (event)
+        $(nodeClassOrId).bind('vmousedown vmouseup', function (event)
         {
             if (event.type == 'vmousedown')
             {
-    
                 tapTime = new Date().getTime();
                 xPos = mouseX = event.pageX;
                 yPos = mouseY = event.pageY;
@@ -293,7 +293,7 @@ function showAlerts(alerts)
                     var duration = (new Date().getTime() - tapTime);
                     var xDiff = Math.abs(mouseX - xPos);
                     var yDiff = Math.abs(mouseY - yPos);
-                    if (duration >= 750 && xDiff + yDiff <= 40)
+                    if (duration >= 750 && xDiff + yDiff <= 10)
                     {
                         //this is a longtap
                         $("#archivePopupMenuLink").click();
@@ -307,7 +307,7 @@ function showAlerts(alerts)
                 var xDiff = Math.abs(event.pageX - xPos);
                 var yDiff = Math.abs(event.pageY - yPos);
                 tapTime = new Date().getTime();
-                if (duration < 750 && xDiff + yDiff <= 40)
+                if (duration < 750 && xDiff + yDiff <= 10)
                 {
                     // this is a tap, indicate which alert we need and emulate click 
                     // this will invoke pagecontainerbeforehide handler soon, but since
@@ -320,6 +320,45 @@ function showAlerts(alerts)
             }
         });
     })();
+}
+
+function showAlerts(alerts)
+{
+    var newHTML = "";
+
+    for (index = 0; index < alerts.length; index++)
+    {
+         newHTML += getAlertLi(alerts[index]);
+    }
+
+    document.querySelector("#arch-list").innerHTML = newHTML;
+
+    // Refresh jquery list view after changing its contents, see the bottom of
+    // http://demos.jquerymobile.com/1.2.0/docs/lists/docs-lists.html
+    $("#arch-list").listview('refresh');
+
+    setTapAndLongTapForAlerts('.arch-item-link');
+}
+
+function onNewPushAlert(whenMs, payload)
+{
+    dbAddAlertFromPush(whenMs, payload, function(alert)
+    {
+        if (alert.mDate === $("#archiveDatePicker").val())
+        {
+            document.querySelector("#arch-list").innerHTML += getAlertLi(alert);
+
+            // Refresh jquery list view after changing its contents, see the bottom of
+            // http://demos.jquerymobile.com/1.2.0/docs/lists/docs-lists.html
+            $("#arch-list").listview('refresh');
+
+            // It appears that we cannot apply mouse handling only to new node (see
+            // node it commented out below); it gets reset for all existing nodes by
+            // refresh and has to be restored for the whole .arch-item-link class.
+            setTapAndLongTapForAlerts(/*'#arch-item-' + alert.id*/'.arch-item-link');
+        }
+        // alerts for other dates will appear when user changes date
+    });
 }
 
 // Navigation across main tabs -- dumb (read: reliable) style

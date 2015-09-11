@@ -3,6 +3,45 @@ var cache = {};
 
 var selectedAlertId;
 
+function dbAddAlert(alert, callback)
+{
+    if (!db)
+    {
+        return;
+    }
+
+    db.transaction(function(tx)
+    {
+        // id is a primary key, sqlite auto increments integer primary keys so we omit id
+        tx.executeSql(
+            "INSERT INTO Alerts (" +
+                "monitorId, name, state, duration, prevstate, pDate, pTime, mDate, mTime, message) values(" + 
+                "?,         ?,    ?,     ?,        ?,         ?,     ?,     ?,     ?,     ?" +
+            ")",
+            [
+                alert.monitorId,
+                alert.name,
+                alert.state,
+                alert.duration,
+                alert.prevstate,
+                alert.pDate,
+                alert.pTime,
+                alert.mDate,
+                alert.mTime,
+                alert.message
+            ],
+            function(tx, result)
+            {
+                alert.id = result.insertId;
+                if (callback)
+                {
+                    callback();
+                }
+            }, null
+        );
+    });
+}
+
 function dbCreate()
 {
     if (!db)
@@ -36,38 +75,11 @@ function dbCreate()
     
             if (testAddFakeAlerts)
             {
-                var uniqueNames = {}; // string name --> int id map
-                var uniqueNameCount = 0;
-        
                 console.log("Will add fake alerts to Alerts table");
     
                 for (index = 0; index < fakeAlerts.length; index++)
                 {
-                    if (!uniqueNames.hasOwnProperty(fakeAlerts[index].name))
-                    {
-                        uniqueNames[fakeAlerts[index].name] = uniqueNameCount++;
-                    }
-        
-                    tx.executeSql(
-                        "INSERT INTO Alerts (" +
-                            "id, monitorId, name, state, duration, prevstate, pDate, pTime, mDate, mTime, message) values(" + 
-                            "?,  ?,         ?,    ?,     ?,        ?,         ?,     ?,     ?,     ?,     ?" +
-                        ")",
-                        [
-                            fakeAlerts[index].id,
-                            uniqueNames[fakeAlerts[index].name],
-                            fakeAlerts[index].name,
-                            fakeAlerts[index].state,
-                            fakeAlerts[index].duration,
-                            fakeAlerts[index].prevstate,
-                            fakeAlerts[index].date,
-                            fakeAlerts[index].time,
-                            fakeAlerts[index].date, // same date/time for now
-                            fakeAlerts[index].time, // same date/time for now
-                            fakeAlerts[index].message
-                        ],
-                        null, null
-                    );
+                    dbAddAlert(fakeAlerts[index], null);
                 }
                 console.log("Queued adding " + fakeAlerts.length + " fake alerts to Alerts table");
             }
@@ -125,6 +137,11 @@ function dbOpenOrCreate()
     });
 }
 
+function dbCache(alert)
+{
+    cache[alert.id.toString()] = alert;
+}
+
 function dbGetAlertsForDate(date, callback)
 {
     // When loading a new page, reset selected alert
@@ -146,12 +163,64 @@ function dbGetAlertsForDate(date, callback)
             {
                 var row = result.rows.item(index);
                 res.push(row);
-                cache[row.id.toString()] = row;
+                dbCache(row);
             }
-            callback(res);
+            if (callback)
+            {
+                callback(res);
+            }
         },
         null);
     }); 
+}
+
+function dbAddAlertFromPush(whenMs, data, callback)
+{
+    if (!db)
+    {
+        return;
+    }
+
+    // date/time of a problem as number of millisec since 1970/01/01 connerted to strings
+    // this value is sent in alert body
+    var pDateTime = new Date(parseInt(data.t));
+    var pDate = $.datepicker.formatDate('mm/dd/yy', pDateTime);
+    var pTime = pDateTime.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1');
+
+    // date/time of a problem as number of millisec since 1970/01/01 connerted to strings
+    // this value is actual timestamp of alert reception
+    var mDateTime = new Date(whenMs);
+    var mDate = $.datepicker.formatDate('mm/dd/yy', mDateTime);
+    var mTime = mDateTime.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1');
+
+    // duration in minutes converted to the string of form '##d ##h ##m'
+    var duration = (data.w >= (24 * 60) ? Math.floor(data.w / (24 * 60)) + 'd ' : '') +
+                   (data.w % (24 * 60) >= 60 ? Math.floor((data.w % (24 * 60)) / 60) + 'h ' : '') +
+                   (data.w % 60 ? data.w % 60 + 'm' : '');
+
+    var newAlert = 
+    {
+        monitorId: data.i,
+        name: data.n,
+        state: data.s2,
+        duration: duration.trim(),
+        prevstate: data.s1,
+        pDate: pDate,
+        pTime: pTime,
+        mDate: mDate,
+        mTime: mTime,
+        message: data.m
+    };
+
+    dbAddAlert(newAlert, function()
+    {
+        dbCache(newAlert); // regardless of current date, cache this alert since we have it handy
+
+        if (callback)
+        {
+            callback(newAlert);
+        }
+    });
 }
 
 function dbSetSelectedAlertId(id)

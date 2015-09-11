@@ -1443,7 +1443,7 @@ div.ui-mobile-viewport {
 .ui-body {
 	position: relative;
 	padding: .4em 1em;
-	/*overflow: hidden;*/
+	overflow: hidden;
 	display: block;
 	clear: both;
 }
