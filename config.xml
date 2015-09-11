@@ -74,6 +74,7 @@
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
+    <hook type="after_prepare" src="hooks/after_prepare/001_copy_assets.js" />
     <platform name="android">
         <allow-intent href="market:*" />
     </platform>
